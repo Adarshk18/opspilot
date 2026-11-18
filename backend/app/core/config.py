@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     app_name: str = "OpsPilot"
     environment: str = "local"   # local | staging | production
     log_level: str = "INFO"
+    database_url: str
 
 
 @lru_cache
