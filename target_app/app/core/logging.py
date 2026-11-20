@@ -1,9 +1,10 @@
 import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.core.request_context import request_id_var
+
 
 class JsonFormatter(logging.Formatter):
     """Turns each log record into one line of JSON."""
@@ -16,7 +17,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord)-> str:
         log = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
             "service": self.service_name,
             "logger": record.name,
