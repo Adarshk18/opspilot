@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     service_name: str = "shoplite"
     environment: str = "local"
     log_level: str = "INFO"
+    database_url: str
 
 
 @lru_cache

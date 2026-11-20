@@ -17,5 +17,25 @@ services:
       retries: 10
     restart: unless-stopped
 
+
+  shop-postgres:
+    image: postgres:16
+    container_name: shoplite-postgres
+    environment:
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop_dev
+      POSTGRES_DB: shop
+    ports:
+      - "5433:5432"
+    volumes:
+      - shop_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop -d shop"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  shop_data:
