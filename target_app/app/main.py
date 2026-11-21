@@ -12,6 +12,7 @@ from app.core.logging import setup_logging
 from app.core.request_context import request_id_var
 from app.db.session import check_database, engine
 from app.routes import router
+from app.admin import router as admin_router
 
 settings = get_settings()
 setup_logging(settings.service_name, settings.log_level)
@@ -25,6 +26,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Shoplite", lifespan=lifespan)
 app.include_router(router)
+app.include_router(admin_router)
 
 @app.middleware("http")
 async def request_logging(request: Request, call_next):
@@ -83,3 +85,23 @@ async def debug_error() -> None:
     if settings.environment != "local":
         raise HTTPException(status_code=404)
     raise RuntimeError("Deliberate test failure")
+
+
+def _memory_rss_mb() -> float:
+    """Current memory used by this process, read from Linux's /proc filesystem."""
+    with open("/proc/self/status") as f:
+        for line in f:
+            if line.startswith("VmRSS:"):
+                return round(int(line.split()[1]) / 1024, 1)
+    return 0.0
+
+
+@app.get("/metrics")
+async def metrics() -> dict:
+    return {
+        "memory_rss_mb": _memory_rss_mb(),
+        "db_pool": {
+            "size": engine.pool.size(),
+            "checked_out": engine.pool.checkedout(),
+        },
+    }

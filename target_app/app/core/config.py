@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     environment: str = "local"
     log_level: str = "INFO"
     database_url: str
+    admin_token: str = ""
 
 
 @lru_cache
