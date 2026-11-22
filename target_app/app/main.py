@@ -31,6 +31,8 @@ app.include_router(admin_router)
 @app.middleware("http")
 async def request_logging(request: Request, call_next):
     """Runs around every request: assigns an ID, times it, and logs the result."""
+    if request.url.path.startswith("/admin/"):
+        return await call_next(request)  # admin traffic goes to an audit log, not the app log stream
     request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
     token = request_id_var.set(request_id)
     start = time.perf_counter()

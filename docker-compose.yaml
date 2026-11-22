@@ -36,6 +36,24 @@ services:
       retries: 10
     restart: unless-stopped
 
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: opspilot-litellm
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:4000:4000"
+    volumes:
+      - ./gateway/config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      DATABASE_URL: postgresql://opspilot:opspilot_dev@postgres:5432/litellm
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    restart: unless-stopped    
+
 volumes:
   postgres_data:
   shop_data:

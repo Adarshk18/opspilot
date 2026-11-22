@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     database_url: str
 
 
+    llm_base_url: str = "http://localhost:4000"
+    llm_api_key: str
+    llm_model: str = "agent-main"
+    shop_base_url: str = "http://localhost:8001"
+    shop_log_path: str = "../logs/shoplite.jsonl"
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Create Settings once, then reuse it everywhere."""

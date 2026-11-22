@@ -9,9 +9,6 @@ class ChaosConfig(BaseModel):
     leak_mb_per_request: int = Field(default=0, ge=0, le=50)
 
 
-class PaymentProviderError(Exception):
-    """Simulates a failing third party dependency"""
-
 
 _config = ChaosConfig()
 _leak: list[bytes] = []
@@ -30,10 +27,8 @@ def reset()->None:
     set_config(ChaosConfig())
     _leak.clear()
 
-def maybe_fail() -> None:
-    """Raise an error for a random fraction of calls."""
-    if _config.error_rate > 0 and random.random() < _config.error_rate:
-        raise PaymentProviderError("payment provider timed out after 3000ms")
+def should_fail_payment() -> bool:
+    return _config.error_rate > 0 and random.random() < _config.error_rate
 
 
 def maybe_leak() -> None:
