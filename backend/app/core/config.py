@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     llm_model: str = "agent-main"
     shop_base_url: str = "http://localhost:8001"
     shop_log_path: str = "../logs/shoplite.jsonl"
+    github_repo: str = ""
+    github_token: str = ""
+    github_deploy_path: str = "target_app"
 
 
 @lru_cache

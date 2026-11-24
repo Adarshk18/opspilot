@@ -2,13 +2,12 @@ import asyncio
 import json
 import time
 from collections import Counter
-from datetime import datetime, timedelta, timezone
-from pathlib  import Path
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import httpx
 
 from app.core.config import get_settings
-
 
 settings = get_settings()
 
@@ -35,8 +34,9 @@ async def get_metrics()-> dict:
 
 async def probe_endpoint(path: str, requests: int =10)-> dict:
     if path not in ALLOWED_PROBE_PATHS:
-        return {"error": f"path not allowed; use one of {ALLOWED_PROBE_PATHS}"}
-    requests =max(1,min(requests,20))
+        suggestion = "/" + path.lstrip("/")
+        hint = f" Did you mean '{suggestion}'?" if suggestion in ALLOWED_PROBE_PATHS else ""
+        return {"error": f"Path '{path}' is not allowed. Use one of {ALLOWED_PROBE_PATHS}.{hint}"}
 
     async with httpx.AsyncClient(base_url=settings.shop_base_url, timeout=15) as client:
         async def one()-> tuple[str, float]:
@@ -72,7 +72,7 @@ def _search_logs_sync(
     if not log_file.exists():
         return {"error": f"log file not found at {log_file}"}
 
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    cutoff = datetime.now(UTC) - timedelta(minutes=minutes)
     needle = contains.lower() if contains else None
     matches: list[dict] = []
 
@@ -120,76 +120,3 @@ async def search_logs(
     limit = max(1, min(limit, 20))
     return await asyncio.to_thread(_search_logs_sync, level, path, contains, minutes, limit)
 
-TOOL_FUNCTIONS = {
-    "get_health": get_health,
-    "get_metrics": get_metrics,
-    "probe_endpoint": probe_endpoint,
-    "search_logs": search_logs,
-}
-
-NO_PARAMS = {"type": "object", "properties": {}, "asdditionalProperties": False}
-
-
-TOOLS =[
-    {
-        "type": "function",
-        "function":{
-            "name": "get_health",
-            "description": "Check Shoplite readiness: whether the service and its database is reachable.",
-            "parameters": NO_PARAMS,
-        }
-    },
-    {
-        "type": "function",
-        "function":{
-            "name": "get_metrics",
-            "description": "Current Shoplite process metrics: memory RSS in MB, DB pool size, and connections currently checked out.",
-            "parameters": NO_PARAMS,
-        }
-    },
-    {
-        "type": "function",
-        "function":{
-            "name": "probe_endpoint",
-            "description": (
-                "Send concurrent GET requests to a ShopLite endpoint and report status codes and latency. "
-                "Use to measure what users experience right now. Read-only."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "enum": ALLOWED_PROBE_PATHS},
-                    "requests": {"type": "integer", "minimum": 1, "maximum": 20},
-                },
-                "required": ["path"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "search_logs",
-            "description": (
-                "Search recent ShopLite JSON logs. Returns counts across ALL matches "
-                "(by level, status code, exception type), first/last seen times, and the most recent samples. "
-                "'contains' searches every field (message, path, request_id, traceback). "
-                "'path' filters to an exact path like /orders."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "level": {"type": "string", "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]},
-                    "path": {"type": "string", "description": "Exact request path, e.g. /orders"},
-                    "contains": {"type": "string", "description": "Case-insensitive text searched across all fields."},
-                    "minutes": {"type": "integer", "minimum": 1, "maximum": 120},
-                    "limit": {"type": "integer", "minimum": 1, "maximum": 20},
-                },
-                "additionalProperties": False,
-            },
-        },
-    },
-]
-        
-
-    
