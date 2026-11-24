@@ -23,7 +23,7 @@ async def list_products(session: SessionDep)-> list[Product]:
     cfg = chaos.get_config()
     if cfg.db_latency_seconds > 0:
         await session.execute(text("SELECT pg_sleep(:s)"), {"s": cfg.db_latency_seconds})
-    result = await session.execute(select(Product).order_by(Product.id))
+    result = await session.execute(select(Product).order_by(Product.price))
     return list(result.scalars().all())
 
 
